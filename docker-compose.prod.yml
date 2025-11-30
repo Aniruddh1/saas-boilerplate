@@ -1,0 +1,87 @@
+# Production Docker Compose
+# Use: docker compose -f docker-compose.prod.yml up -d
+
+services:
+  # API (FastAPI)
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: saas-api
+    restart: unless-stopped
+    environment:
+      - DB_URL=${DB_URL}
+      - REDIS_URL=${REDIS_URL}
+      - AUTH_SECRET_KEY=${AUTH_SECRET_KEY}
+      - ENVIRONMENT=production
+      - DEBUG=false
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # Worker (Celery)
+  worker:
+    build:
+      context: ./apps/worker
+      dockerfile: Dockerfile
+    container_name: saas-worker
+    restart: unless-stopped
+    environment:
+      - BROKER_URL=${QUEUE_BROKER_URL}
+      - RESULT_BACKEND=${QUEUE_RESULT_BACKEND}
+      - DATABASE_URL=${DB_URL}
+    command: celery -A src.celery_app worker --loglevel=warning --concurrency=4
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+  # Beat (Celery scheduler)
+  beat:
+    build:
+      context: ./apps/worker
+      dockerfile: Dockerfile
+    container_name: saas-beat
+    restart: unless-stopped
+    environment:
+      - BROKER_URL=${QUEUE_BROKER_URL}
+      - RESULT_BACKEND=${QUEUE_RESULT_BACKEND}
+    command: celery -A src.celery_app beat --loglevel=warning
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+
+  # Frontend (Nginx serving static build)
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile.prod
+    container_name: saas-web
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
+
+networks:
+  default:
+    name: saas-network

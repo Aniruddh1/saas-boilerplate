@@ -1,0 +1,151 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: saas-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: saas
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    container_name: saas-redis
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Meilisearch
+  meilisearch:
+    image: getmeili/meilisearch:v1.6
+    container_name: saas-meilisearch
+    environment:
+      MEILI_ENV: development
+      MEILI_NO_ANALYTICS: "true"
+    ports:
+      - "7700:7700"
+    volumes:
+      - meilisearch_data:/meili_data
+
+  # MailHog (for email testing)
+  mailhog:
+    image: mailhog/mailhog
+    container_name: saas-mailhog
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+
+  # API (FastAPI)
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: saas-api
+    environment:
+      - DB_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/saas
+      - REDIS_URL=redis://redis:6379/0
+      - SEARCH_MEILISEARCH_URL=http://meilisearch:7700
+      - EMAIL_SMTP_HOST=mailhog
+      - EMAIL_SMTP_PORT=1025
+      - QUEUE_BROKER_URL=redis://redis:6379/1
+      - QUEUE_RESULT_BACKEND=redis://redis:6379/2
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./apps/api/src:/app/src:ro
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Worker (Celery)
+  worker:
+    build:
+      context: ./apps/worker
+      dockerfile: Dockerfile
+    container_name: saas-worker
+    environment:
+      - BROKER_URL=redis://redis:6379/1
+      - RESULT_BACKEND=redis://redis:6379/2
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/saas
+      - SMTP_HOST=mailhog
+      - SMTP_PORT=1025
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./apps/worker/src:/app/src:ro
+    command: celery -A src.celery_app worker --loglevel=info
+
+  # Beat (Celery scheduler)
+  beat:
+    build:
+      context: ./apps/worker
+      dockerfile: Dockerfile
+    container_name: saas-beat
+    environment:
+      - BROKER_URL=redis://redis:6379/1
+      - RESULT_BACKEND=redis://redis:6379/2
+    depends_on:
+      - worker
+    volumes:
+      - ./apps/worker/src:/app/src:ro
+    command: celery -A src.celery_app beat --loglevel=info
+
+  # Flower (Celery monitoring)
+  flower:
+    image: mher/flower
+    container_name: saas-flower
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - FLOWER_PORT=5555
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
+      - worker
+
+  # Frontend (React - dev mode)
+  web:
+    image: node:20-alpine
+    container_name: saas-web
+    working_dir: /app
+    environment:
+      - NODE_ENV=development
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./apps/web:/app
+      - /app/node_modules
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
+  redis_data:
+  meilisearch_data:
+
+networks:
+  default:
+    name: saas-network

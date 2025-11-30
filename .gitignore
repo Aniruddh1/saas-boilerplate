@@ -1,0 +1,154 @@
+# ==============================================
+# SaaS Boilerplate - Git Ignore
+# ==============================================
+
+# ---------------------------------------------
+# Environment
+# ---------------------------------------------
+.env
+.env.local
+.env.*.local
+*.env
+
+# ---------------------------------------------
+# Python
+# ---------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Pytest
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+*.cover
+
+# MyPy
+.mypy_cache/
+
+# Ruff
+.ruff_cache/
+
+# ---------------------------------------------
+# Node.js
+# ---------------------------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn-integrity
+
+# Build output
+apps/web/dist/
+apps/web/build/
+
+# ---------------------------------------------
+# IDE
+# ---------------------------------------------
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+*.sublime-workspace
+*.sublime-project
+
+# ---------------------------------------------
+# OS
+# ---------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.bak
+*.tmp
+*.temp
+
+# ---------------------------------------------
+# Docker
+# ---------------------------------------------
+docker-compose.override.yml
+
+# ---------------------------------------------
+# Logs
+# ---------------------------------------------
+logs/
+*.log
+*.log.*
+
+# ---------------------------------------------
+# Database
+# ---------------------------------------------
+*.sqlite
+*.sqlite3
+*.db
+
+# ---------------------------------------------
+# Secrets & Credentials
+# ---------------------------------------------
+*.pem
+*.key
+*.crt
+*.p12
+secrets/
+credentials/
+.secrets
+
+# ---------------------------------------------
+# Local Development
+# ---------------------------------------------
+.local/
+local/
+scratch/
+tmp/
+temp/
+
+# ---------------------------------------------
+# Test Artifacts
+# ---------------------------------------------
+test-results/
+playwright-report/
+playwright/.cache/
+
+# ---------------------------------------------
+# Build Artifacts
+# ---------------------------------------------
+*.tar
+*.tar.gz
+*.zip
