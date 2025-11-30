@@ -15,10 +15,12 @@ interface AuthState {
   refreshToken: string | null
   isAuthenticated: boolean
   isLoading: boolean
+  isInitialized: boolean
   login: (email: string, password: string) => Promise<void>
   register: (email: string, password: string, name: string) => Promise<void>
   logout: () => void
   refreshAuth: () => Promise<void>
+  validateSession: () => Promise<void>
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -29,6 +31,7 @@ export const useAuthStore = create<AuthState>()(
       refreshToken: null,
       isAuthenticated: false,
       isLoading: false,
+      isInitialized: false,
 
       login: async (email: string, password: string) => {
         set({ isLoading: true })
@@ -102,6 +105,26 @@ export const useAuthStore = create<AuthState>()(
           })
         } catch {
           get().logout()
+        }
+      },
+
+      validateSession: async () => {
+        const { accessToken, isAuthenticated } = get()
+
+        // No token stored - nothing to validate
+        if (!accessToken || !isAuthenticated) {
+          set({ isInitialized: true })
+          return
+        }
+
+        // Validate token by fetching current user
+        try {
+          const response = await api.get('/auth/me')
+          set({ user: response.data, isInitialized: true })
+        } catch {
+          // Token is invalid - clear auth state
+          get().logout()
+          set({ isInitialized: true })
         }
       },
     }),

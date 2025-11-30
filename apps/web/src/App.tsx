@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from '@/components/ui/toaster'
 import { useAuthStore } from '@/stores/auth'
@@ -38,6 +39,22 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
+  const isInitialized = useAuthStore((state) => state.isInitialized)
+  const validateSession = useAuthStore((state) => state.validateSession)
+
+  useEffect(() => {
+    validateSession()
+  }, [validateSession])
+
+  // Show loading while validating session
+  if (!isInitialized) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    )
+  }
+
   return (
     <>
       <Routes>
