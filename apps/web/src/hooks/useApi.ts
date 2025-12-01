@@ -1,10 +1,22 @@
 /**
  * TanStack Query hooks for API data fetching.
+ *
+ * Demonstrates enterprise pagination patterns:
+ * - Offset pagination (useAuditLogs) - for admin tables
+ * - Cursor pagination (useAuditLogsStream) - for infinite scroll
+ * - Count queries (useAuditLogsCount) - for badges
  */
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query'
 import { api } from '@/lib/api'
-import type { User, AuditLog, AuditLogFilter } from '@/types'
+import type {
+  User,
+  AuditLog,
+  AuditLogFilter,
+  OffsetPage,
+  CursorPage,
+  OffsetParams,
+} from '@/types'
 
 // ============ Query Keys ============
 
@@ -16,8 +28,9 @@ export const queryKeys = {
   },
   auditLogs: {
     all: ['auditLogs'] as const,
-    list: (filters?: AuditLogFilter & { limit?: number; offset?: number }) =>
-      ['auditLogs', 'list', filters] as const,
+    list: (filters?: AuditLogFilter & OffsetParams) => ['auditLogs', 'list', filters] as const,
+    stream: (filters?: AuditLogFilter) => ['auditLogs', 'stream', filters] as const,
+    count: (filters?: AuditLogFilter) => ['auditLogs', 'count', filters] as const,
     byId: (id: string) => ['auditLogs', id] as const,
   },
   features: {
@@ -60,8 +73,8 @@ export function useUsers(filters?: { page?: number; per_page?: number; search?: 
   return useQuery({
     queryKey: queryKeys.user.list(filters),
     queryFn: async () => {
-      const { data } = await api.get('/admin/users', { params: filters })
-      return data as { items: User[]; total: number; page: number; per_page: number }
+      const { data } = await api.get<OffsetPage<User>>('/users', { params: filters })
+      return data
     },
   })
 }
@@ -71,7 +84,7 @@ export function useUpdateUser() {
 
   return useMutation({
     mutationFn: async ({ userId, data }: { userId: string; data: { is_admin?: boolean; is_active?: boolean } }) => {
-      const response = await api.patch(`/admin/users/${userId}`, data)
+      const response = await api.patch(`/users/${userId}`, data)
       return response.data
     },
     onSuccess: () => {
@@ -82,16 +95,59 @@ export function useUpdateUser() {
 
 // ============ Audit Logs Hooks ============
 
-export function useAuditLogs(filters?: AuditLogFilter & { limit?: number; offset?: number }) {
+/**
+ * Offset pagination for audit logs.
+ * Best for: Admin tables with page numbers.
+ */
+export function useAuditLogs(filters?: AuditLogFilter & OffsetParams) {
   return useQuery({
     queryKey: queryKeys.auditLogs.list(filters),
     queryFn: async () => {
-      const { data } = await api.get<AuditLog[]>('/audit-logs', { params: filters })
+      const { data } = await api.get<OffsetPage<AuditLog>>('/audit-logs', { params: filters })
       return data
     },
   })
 }
 
+/**
+ * Cursor pagination for audit logs (infinite scroll).
+ * Best for: Real-time feeds, infinite scroll UIs.
+ */
+export function useAuditLogsStream(filters?: AuditLogFilter & { limit?: number }) {
+  return useInfiniteQuery({
+    queryKey: queryKeys.auditLogs.stream(filters),
+    queryFn: async ({ pageParam }) => {
+      const params = {
+        ...filters,
+        cursor: pageParam,
+        limit: filters?.limit || 20,
+      }
+      const { data } = await api.get<CursorPage<AuditLog>>('/audit-logs/stream', { params })
+      return data
+    },
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
+    getPreviousPageParam: (firstPage) => firstPage.prev_cursor ?? undefined,
+  })
+}
+
+/**
+ * Count audit logs matching filters.
+ * Best for: Dashboard stats, badges.
+ */
+export function useAuditLogsCount(filters?: AuditLogFilter) {
+  return useQuery({
+    queryKey: queryKeys.auditLogs.count(filters),
+    queryFn: async () => {
+      const { data } = await api.get<{ count: number }>('/audit-logs/count', { params: filters })
+      return data.count
+    },
+  })
+}
+
+/**
+ * Get single audit log by ID.
+ */
 export function useAuditLog(logId: string) {
   return useQuery({
     queryKey: queryKeys.auditLogs.byId(logId),
@@ -100,6 +156,31 @@ export function useAuditLog(logId: string) {
       return data
     },
     enabled: !!logId,
+  })
+}
+
+/**
+ * Export audit logs as file.
+ * Returns download URL.
+ */
+export function useExportAuditLogs() {
+  return useMutation({
+    mutationFn: async (params: AuditLogFilter & { format?: 'csv' | 'jsonl' }) => {
+      const response = await api.get('/audit-logs/export', {
+        params,
+        responseType: 'blob',
+      })
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([response.data]))
+      const link = document.createElement('a')
+      link.href = url
+      const format = params.format || 'csv'
+      link.setAttribute('download', `audit_logs.${format}`)
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+    },
   })
 }
 

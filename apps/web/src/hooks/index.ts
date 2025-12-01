@@ -8,14 +8,21 @@ export { useTheme } from './useTheme'
 
 // API hooks (TanStack Query)
 export {
+  // Users
   useCurrentUser,
   useUpdateProfile,
   useUsers,
   useUpdateUser,
-  useAuditLogs,
+  // Audit logs (with pagination patterns)
+  useAuditLogs,        // Offset pagination
+  useAuditLogsStream,  // Cursor/infinite scroll
+  useAuditLogsCount,   // Count only
   useAuditLog,
+  useExportAuditLogs,  // Export/download
+  // Feature flags
   useMyFeatureFlags,
   useCheckFeatureFlag,
+  // Query keys
   queryKeys,
 } from './useApi'
 

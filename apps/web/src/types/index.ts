@@ -98,13 +98,51 @@ export interface AuditLogFilter {
 
 // ============ Pagination Types ============
 
-export interface PaginatedResponse<T> {
+/**
+ * Offset pagination response (traditional page-based).
+ * Best for: Admin tables with page numbers, random page access.
+ */
+export interface OffsetPage<T> {
   items: T[]
   total: number
   page: number
   per_page: number
   pages: number
+  has_next: boolean
+  has_prev: boolean
 }
+
+/**
+ * Cursor pagination response (keyset-based).
+ * Best for: Infinite scroll, real-time feeds, large datasets.
+ */
+export interface CursorPage<T> {
+  items: T[]
+  next_cursor: string | null
+  prev_cursor: string | null
+  has_next: boolean
+  has_prev: boolean
+  limit: number
+}
+
+/**
+ * Offset pagination parameters.
+ */
+export interface OffsetParams {
+  page?: number
+  per_page?: number
+}
+
+/**
+ * Cursor pagination parameters.
+ */
+export interface CursorParams {
+  cursor?: string
+  limit?: number
+}
+
+// Legacy alias for backward compatibility
+export type PaginatedResponse<T> = OffsetPage<T>
 
 // ============ Common Types ============
 
