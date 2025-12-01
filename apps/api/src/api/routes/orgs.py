@@ -14,9 +14,11 @@ from src.schemas.org import (
     AddMemberRequest,
     UpdateMemberRequest,
 )
+from src.schemas.api_key import APIKeyResponse
 from src.services.org import OrgService
+from src.services.api_key import APIKeyService
 from src.api.dependencies.auth import get_current_user
-from src.api.dependencies.services import get_org_service
+from src.api.dependencies.services import get_org_service, get_api_key_service
 from src.api.dependencies.permissions import require_org_permission
 from src.models.user import User
 
@@ -30,7 +32,13 @@ async def create_org(
     current_user: User = Depends(get_current_user),
 ):
     """Create a new organization."""
-    org = await org_service.create(data, owner_id=current_user.id)
+    try:
+        org = await org_service.create(data, owner_id=current_user.id)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
     return OrgResponse.model_validate(org)
 
 
@@ -152,3 +160,15 @@ async def remove_member(
     removed = await org_service.remove_member(org_id, user_id)
     if not removed:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+
+# API Keys (nested under org)
+@router.get("/{org_id}/api-keys", response_model=list[APIKeyResponse])
+async def list_org_api_keys(
+    org_id: UUID,
+    api_key_service: APIKeyService = Depends(get_api_key_service),
+    _: User = Depends(require_org_permission("api_key:read")),
+):
+    """List API keys for an organization."""
+    keys = await api_key_service.list_for_org(org_id)
+    return [APIKeyResponse.model_validate(k) for k in keys]

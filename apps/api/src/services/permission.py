@@ -34,6 +34,12 @@ PERMISSIONS = {
     "api_key:read": OrgRole.MEMBER,
     "api_key:update": OrgRole.MEMBER,
     "api_key:delete": OrgRole.ADMIN,
+
+    # Webhook permissions
+    "webhook:create": OrgRole.ADMIN,
+    "webhook:read": OrgRole.MEMBER,
+    "webhook:update": OrgRole.ADMIN,
+    "webhook:delete": OrgRole.ADMIN,
 }
 
 

@@ -150,8 +150,26 @@ export function useDeleteOrg() {
   return useMutation({
     mutationFn: async (orgId: string) => {
       await api.delete(`/orgs/${orgId}`)
+      return orgId // Return orgId so onSuccess can use it
     },
-    onSuccess: () => {
+    onSuccess: (deletedOrgId) => {
+      // Cancel and remove ALL queries for the deleted org
+      queryClient.cancelQueries({ queryKey: queryKeys.orgs.byId(deletedOrgId) })
+      queryClient.cancelQueries({ queryKey: queryKeys.orgs.members(deletedOrgId) })
+      queryClient.cancelQueries({ queryKey: queryKeys.apiKeys.byOrg(deletedOrgId) })
+      queryClient.cancelQueries({ queryKey: queryKeys.webhooks.byOrg(deletedOrgId) })
+      queryClient.cancelQueries({ queryKey: queryKeys.auditLogs.byOrg(deletedOrgId) })
+      queryClient.cancelQueries({ queryKey: queryKeys.projects.byOrg(deletedOrgId) })
+
+      // Remove stale data from cache
+      queryClient.removeQueries({ queryKey: queryKeys.orgs.byId(deletedOrgId) })
+      queryClient.removeQueries({ queryKey: queryKeys.orgs.members(deletedOrgId) })
+      queryClient.removeQueries({ queryKey: queryKeys.apiKeys.byOrg(deletedOrgId) })
+      queryClient.removeQueries({ queryKey: queryKeys.webhooks.byOrg(deletedOrgId) })
+      queryClient.removeQueries({ queryKey: queryKeys.auditLogs.byOrg(deletedOrgId) })
+      queryClient.removeQueries({ queryKey: queryKeys.projects.byOrg(deletedOrgId) })
+
+      // Refresh org list
       queryClient.invalidateQueries({ queryKey: queryKeys.orgs.all })
     },
   })

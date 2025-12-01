@@ -76,6 +76,7 @@ class Organization(Base, TimestampMixin):
         "APIKey",
         back_populates="org",
         lazy="selectin",
+        cascade="all, delete-orphan",
     )
     webhooks: Mapped[list["Webhook"]] = relationship(
         "Webhook",

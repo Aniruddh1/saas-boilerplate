@@ -145,3 +145,9 @@ class APIKeyService:
 
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
+
+    async def list_for_org(self, org_id: UUID) -> list[APIKey]:
+        """List all API keys for an organization."""
+        stmt = select(APIKey).where(APIKey.org_id == org_id)
+        result = await self.db.execute(stmt)
+        return list(result.scalars().all())

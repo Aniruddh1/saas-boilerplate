@@ -22,7 +22,7 @@ export function OrgDetailPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { data: org, isLoading, error } = useOrg(orgId!)
-  const { setCurrentOrg, currentOrg } = useOrgStore()
+  const { setCurrentOrg, currentOrg, clearCurrentOrg } = useOrgStore()
 
   useEffect(() => {
     if (org && (!currentOrg || currentOrg.id !== org.id)) {
@@ -30,14 +30,23 @@ export function OrgDetailPage() {
     }
   }, [org, currentOrg, setCurrentOrg])
 
+  // If org fetch fails (404 or 403), redirect to orgs list
+  useEffect(() => {
+    if (error) {
+      // Clear current org if it was the deleted one
+      if (currentOrg?.id === orgId) {
+        clearCurrentOrg()
+      }
+      // Navigate to orgs list instead of showing error
+      navigate('/orgs', { replace: true })
+    }
+  }, [error, orgId, currentOrg, clearCurrentOrg, navigate])
+
   if (error) {
+    // Show loading while redirecting
     return (
-      <div className="flex flex-col items-center justify-center h-64 space-y-4">
-        <p className="text-destructive">Failed to load organization</p>
-        <Button variant="outline" onClick={() => navigate('/orgs')}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Organizations
-        </Button>
+      <div className="flex items-center justify-center h-64">
+        <div className="text-muted-foreground">Redirecting...</div>
       </div>
     )
   }

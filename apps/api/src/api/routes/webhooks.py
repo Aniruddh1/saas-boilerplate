@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.dependencies.auth import get_current_user
+from src.api.dependencies.permissions import require_org_permission
 from src.api.dependencies.database import get_db
 from src.models.user import User
 from src.schemas.webhook import (
@@ -17,7 +18,7 @@ from src.schemas.webhook import (
     WebhookTestResponse,
     WebhookUpdate,
 )
-from src.services.webhook import WebhookDispatcher, WebhookService
+from src.services.webhook import WebhookDispatcher, WebhookService, SSRFError
 
 router = APIRouter(prefix="/orgs/{org_id}/webhooks", tags=["webhooks"])
 
@@ -43,11 +44,10 @@ async def list_webhook_events():
 @router.get("", response_model=list[WebhookResponse])
 async def list_webhooks(
     org_id: UUID,
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(require_org_permission("webhook:read"))],
     service: Annotated[WebhookService, Depends(get_webhook_service)],
 ):
     """List all webhooks for an organization."""
-    # TODO: Add permission check for org access
     webhooks = await service.get_by_org(org_id)
     return webhooks
 
@@ -56,7 +56,7 @@ async def list_webhooks(
 async def create_webhook(
     org_id: UUID,
     data: WebhookCreate,
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(require_org_permission("webhook:create"))],
     service: Annotated[WebhookService, Depends(get_webhook_service)],
 ):
     """Create a new webhook."""
@@ -68,7 +68,13 @@ async def create_webhook(
             detail=f"Invalid event types: {invalid_events}",
         )
 
-    webhook = await service.create(org_id, data)
+    try:
+        webhook = await service.create(org_id, data)
+    except SSRFError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid webhook URL: {e}",
+        )
     return webhook
 
 
@@ -76,7 +82,7 @@ async def create_webhook(
 async def get_webhook(
     org_id: UUID,
     webhook_id: UUID,
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(require_org_permission("webhook:read"))],
     service: Annotated[WebhookService, Depends(get_webhook_service)],
 ):
     """Get a webhook by ID."""
@@ -94,7 +100,7 @@ async def update_webhook(
     org_id: UUID,
     webhook_id: UUID,
     data: WebhookUpdate,
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(require_org_permission("webhook:update"))],
     service: Annotated[WebhookService, Depends(get_webhook_service)],
 ):
     """Update a webhook."""
@@ -114,7 +120,13 @@ async def update_webhook(
                 detail=f"Invalid event types: {invalid_events}",
             )
 
-    webhook = await service.update(webhook, data)
+    try:
+        webhook = await service.update(webhook, data)
+    except SSRFError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid webhook URL: {e}",
+        )
     return webhook
 
 
@@ -122,7 +134,7 @@ async def update_webhook(
 async def delete_webhook(
     org_id: UUID,
     webhook_id: UUID,
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(require_org_permission("webhook:delete"))],
     service: Annotated[WebhookService, Depends(get_webhook_service)],
 ):
     """Delete a webhook."""
@@ -140,7 +152,7 @@ async def delete_webhook(
 async def test_webhook(
     org_id: UUID,
     webhook_id: UUID,
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(require_org_permission("webhook:update"))],
     service: Annotated[WebhookService, Depends(get_webhook_service)],
     dispatcher: Annotated[WebhookDispatcher, Depends(get_webhook_dispatcher)],
 ):
@@ -160,7 +172,7 @@ async def test_webhook(
 async def list_webhook_logs(
     org_id: UUID,
     webhook_id: UUID,
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(require_org_permission("webhook:read"))],
     service: Annotated[WebhookService, Depends(get_webhook_service)],
     limit: int = 50,
     offset: int = 0,

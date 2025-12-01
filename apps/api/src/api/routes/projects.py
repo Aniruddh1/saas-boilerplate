@@ -14,7 +14,7 @@ from src.schemas.project import (
 from src.services.project import ProjectService
 from src.api.dependencies.auth import get_current_user
 from src.api.dependencies.services import get_project_service
-from src.api.dependencies.permissions import require_org_permission
+from src.api.dependencies.permissions import require_project_permission, require_org_permission
 from src.models.user import User
 
 router = APIRouter()
@@ -58,7 +58,7 @@ async def list_projects(
 async def get_project(
     project_id: UUID,
     project_service: ProjectService = Depends(get_project_service),
-    _: User = Depends(require_org_permission("project:read")),
+    _: User = Depends(require_project_permission("project:read")),
 ):
     """Get project by ID."""
     project = await project_service.get_by_id(project_id)
@@ -72,7 +72,7 @@ async def update_project(
     project_id: UUID,
     data: ProjectUpdate,
     project_service: ProjectService = Depends(get_project_service),
-    _: User = Depends(require_org_permission("project:update")),
+    _: User = Depends(require_project_permission("project:update")),
 ):
     """Update project."""
     project = await project_service.update(project_id, data)
@@ -85,7 +85,7 @@ async def update_project(
 async def delete_project(
     project_id: UUID,
     project_service: ProjectService = Depends(get_project_service),
-    _: User = Depends(require_org_permission("project:delete")),
+    _: User = Depends(require_project_permission("project:delete")),
 ):
     """Delete project."""
     deleted = await project_service.delete(project_id)

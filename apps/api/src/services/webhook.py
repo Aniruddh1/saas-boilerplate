@@ -2,10 +2,13 @@
 
 import hashlib
 import hmac
+import ipaddress
 import json
+import socket
 import time
 from datetime import datetime, timezone
 from typing import Any, Optional
+from urllib.parse import urlparse
 from uuid import UUID
 
 import httpx
@@ -17,6 +20,75 @@ from src.models.webhook import Webhook, WebhookLog
 from src.schemas.webhook import WebhookCreate, WebhookUpdate
 
 logger = structlog.get_logger()
+
+
+class SSRFError(Exception):
+    """Raised when a URL is blocked due to SSRF protection."""
+    pass
+
+
+def is_private_ip(ip_str: str) -> bool:
+    """Check if an IP address is private, loopback, or otherwise restricted."""
+    try:
+        ip = ipaddress.ip_address(ip_str)
+        return (
+            ip.is_private
+            or ip.is_loopback
+            or ip.is_link_local
+            or ip.is_multicast
+            or ip.is_reserved
+            or ip.is_unspecified
+            # AWS/GCP/Azure metadata endpoints
+            or ip_str in ("169.254.169.254", "metadata.google.internal")
+        )
+    except ValueError:
+        return False
+
+
+def validate_webhook_url(url: str) -> None:
+    """
+    Validate a webhook URL to prevent SSRF attacks.
+
+    Raises:
+        SSRFError: If the URL targets a restricted destination.
+    """
+    parsed = urlparse(url)
+
+    # Only allow http and https
+    if parsed.scheme not in ("http", "https"):
+        raise SSRFError(f"Invalid URL scheme: {parsed.scheme}. Only http/https allowed.")
+
+    hostname = parsed.hostname
+    if not hostname:
+        raise SSRFError("Invalid URL: no hostname")
+
+    # Block obvious dangerous hostnames
+    blocked_hostnames = {
+        "localhost",
+        "127.0.0.1",
+        "0.0.0.0",
+        "::1",
+        "[::1]",
+        "metadata.google.internal",
+        "metadata",
+        "kubernetes.default",
+        "kubernetes.default.svc",
+    }
+
+    if hostname.lower() in blocked_hostnames:
+        raise SSRFError(f"Blocked hostname: {hostname}")
+
+    # Resolve hostname and check if it's a private IP
+    try:
+        # Get all IPs for the hostname
+        addr_info = socket.getaddrinfo(hostname, None, socket.AF_UNSPEC, socket.SOCK_STREAM)
+        for family, _, _, _, sockaddr in addr_info:
+            ip = sockaddr[0]
+            if is_private_ip(ip):
+                raise SSRFError(f"URL resolves to private/restricted IP: {ip}")
+    except socket.gaierror:
+        # DNS resolution failed - let the request fail naturally later
+        pass
 
 # Signature header name
 SIGNATURE_HEADER = "X-Webhook-Signature"
@@ -53,6 +125,9 @@ class WebhookService:
 
     async def create(self, org_id: UUID, data: WebhookCreate) -> Webhook:
         """Create a new webhook."""
+        # Validate URL to prevent SSRF
+        validate_webhook_url(str(data.url))
+
         webhook = Webhook(
             org_id=org_id,
             name=data.name,
@@ -84,6 +159,8 @@ class WebhookService:
         """Update a webhook."""
         update_data = data.model_dump(exclude_unset=True)
         if "url" in update_data and update_data["url"]:
+            # Validate URL to prevent SSRF
+            validate_webhook_url(str(update_data["url"]))
             update_data["url"] = str(update_data["url"])
 
         for field, value in update_data.items():
@@ -182,6 +259,30 @@ class WebhookDispatcher:
         attempt: int = 1
     ) -> bool:
         """Deliver a webhook event."""
+        # SSRF protection: validate URL before making request
+        try:
+            validate_webhook_url(webhook.url)
+        except SSRFError as e:
+            logger.warning(
+                "Webhook URL blocked by SSRF protection",
+                webhook_id=str(webhook.id),
+                url=webhook.url,
+                error=str(e),
+            )
+            # Log the blocked attempt
+            log = WebhookLog(
+                webhook_id=webhook.id,
+                event_type=event_type,
+                payload=payload,
+                request_headers={},
+                attempt=attempt,
+                error_message=f"SSRF protection: {e}",
+                success=False,
+            )
+            self.db.add(log)
+            await self.db.commit()
+            return False
+
         timestamp = str(int(time.time()))
         json_payload = json.dumps(payload, default=str, sort_keys=True)
 
@@ -269,6 +370,17 @@ class WebhookDispatcher:
 
     async def test(self, webhook: Webhook) -> dict:
         """Send a test ping to a webhook."""
+        # SSRF protection: validate URL before making request
+        try:
+            validate_webhook_url(webhook.url)
+        except SSRFError as e:
+            return {
+                "success": False,
+                "status_code": None,
+                "response_time_ms": 0,
+                "error": f"SSRF protection: {e}",
+            }
+
         timestamp = str(int(time.time()))
         payload = {
             "event": "test.ping",
