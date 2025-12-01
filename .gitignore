@@ -152,3 +152,8 @@ playwright/.cache/
 *.tar
 *.tar.gz
 *.zip
+
+# TypeScript build info
+*.tsbuildinfo
+vite.config.d.ts
+vite.config.js
