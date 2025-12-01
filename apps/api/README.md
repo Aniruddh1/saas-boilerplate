@@ -6,6 +6,7 @@ Production-ready FastAPI backend with authentication, authorization, and audit l
 
 - **Authentication**: JWT-based auth with access/refresh tokens
 - **Authorization**: Progressive-complexity system (simple to enterprise RBAC/ABAC)
+- **Feature Flags**: Percentage rollouts, targeting, groups, overrides
 - **User Management**: Registration, login, profile, admin controls
 - **Audit Logging**: Track all user actions
 - **Async Database**: SQLAlchemy 2.0 with PostgreSQL
@@ -42,6 +43,7 @@ API runs at http://localhost:8000
 |----------|-------------|
 | [Getting Started](./docs/GETTING_STARTED.md) | Setup and basic usage |
 | [Authorization](./docs/AUTHORIZATION.md) | Full auth system guide |
+| [Feature Flags](./docs/FEATURE_FLAGS.md) | Feature flag system guide |
 | [API Docs](http://localhost:8000/docs) | Interactive Swagger UI |
 
 ## Project Structure
@@ -59,12 +61,15 @@ src/
 │   ├── config.py           # Settings
 │   ├── database.py         # DB connection
 │   ├── security.py         # Password, JWT
-│   └── auth/               # Authorization system
-│       ├── interfaces.py   # Abstract contracts
-│       ├── service.py      # AuthorizationService
-│       ├── dependencies.py # CurrentUser, AdminUser, Authorize
-│       ├── decorators.py   # @require, @require_admin
-│       └── policy/         # Policy engines
+│   ├── auth/               # Authorization system
+│   │   ├── interfaces.py   # Abstract contracts
+│   │   ├── service.py      # AuthorizationService
+│   │   ├── dependencies.py # CurrentUser, AdminUser, Authorize
+│   │   └── decorators.py   # @require, @require_admin
+│   └── features/           # Feature flag system
+│       ├── service.py      # FeatureService
+│       ├── dependencies.py # Feature, UserFeature
+│       └── backends/       # Database, memory backends
 ├── models/                 # SQLAlchemy models
 ├── schemas/                # Pydantic schemas
 ├── services/               # Business logic
@@ -117,6 +122,10 @@ JWT_REFRESH_TOKEN_EXPIRE_DAYS=7
 AUTH_POLICY_ENGINE=simple      # simple or rbac
 AUTH_SCOPE_PROVIDER=none       # none, ownership, tenant
 AUTH_MULTI_TENANT=false
+
+# Feature Flags (optional)
+FEATURE_BACKEND=database       # database or memory
+FEATURE_DEFAULT_ENABLED=false  # default when flag doesn't exist
 ```
 
 ## API Endpoints

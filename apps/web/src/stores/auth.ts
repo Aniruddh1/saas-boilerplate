@@ -7,6 +7,12 @@ interface User {
   email: string
   name: string
   avatar_url?: string
+  is_admin: boolean
+  is_active: boolean
+  is_verified: boolean
+  timezone?: string
+  created_at?: string
+  last_login_at?: string
 }
 
 interface AuthState {
@@ -21,6 +27,7 @@ interface AuthState {
   logout: () => void
   refreshAuth: () => Promise<void>
   validateSession: () => Promise<void>
+  setUser: (user: User) => void
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -87,6 +94,10 @@ export const useAuthStore = create<AuthState>()(
           refreshToken: null,
           isAuthenticated: false,
         })
+      },
+
+      setUser: (user: User) => {
+        set({ user })
       },
 
       refreshAuth: async () => {

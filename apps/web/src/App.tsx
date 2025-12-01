@@ -15,11 +15,29 @@ import { RegisterPage } from '@/pages/auth/RegisterPage'
 import { DashboardPage } from '@/pages/dashboard/DashboardPage'
 import { SettingsPage } from '@/pages/settings/SettingsPage'
 
+// Admin Pages
+import { UsersPage, FeatureFlagsPage } from '@/pages/admin'
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />
+  }
+
+  return <>{children}</>
+}
+
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+  const user = useAuthStore((state) => state.user)
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />
+  }
+
+  if (!user?.is_admin) {
+    return <Navigate to="/dashboard" replace />
   }
 
   return <>{children}</>
@@ -62,6 +80,24 @@ function App() {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+
+          {/* Admin routes */}
+          <Route
+            path="/admin/users"
+            element={
+              <AdminRoute>
+                <UsersPage />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/feature-flags"
+            element={
+              <AdminRoute>
+                <FeatureFlagsPage />
+              </AdminRoute>
+            }
+          />
         </Route>
       </Routes>
       <Toaster />

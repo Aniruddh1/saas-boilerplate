@@ -7,7 +7,17 @@ export { useMediaQuery, useIsMobile, useIsTablet, useIsDesktop } from './useMedi
 export { useTheme } from './useTheme'
 
 // API hooks (TanStack Query)
-export { useCurrentUser, useUpdateProfile, useProjects, useProject, useCreateProject, useDeleteProject, queryKeys, createQueryHook } from './useApi'
+export {
+  useCurrentUser,
+  useUpdateProfile,
+  useUsers,
+  useUpdateUser,
+  useAuditLogs,
+  useAuditLog,
+  useMyFeatureFlags,
+  useCheckFeatureFlag,
+  queryKeys,
+} from './useApi'
 
 // Toast
-export { useToast, toast } from './use-toast'
+export { useToast } from './use-toast'

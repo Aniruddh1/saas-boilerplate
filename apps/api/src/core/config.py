@@ -125,6 +125,25 @@ class QueueSettings(BaseSettings):
     result_backend: str = Field(default="redis://localhost:6379/2")
 
 
+class FeatureSettings(BaseSettings):
+    """Feature flag configuration."""
+
+    model_config = SettingsConfigDict(env_prefix="FEATURE_")
+
+    backend: str = Field(
+        default="database",
+        description="Feature flag backend: database, memory",
+    )
+    default_enabled: bool = Field(
+        default=False,
+        description="Default value when flag doesn't exist",
+    )
+    cache_ttl: int = Field(
+        default=60,
+        description="Cache TTL for flag values (seconds)",
+    )
+
+
 class Settings(BaseSettings):
     """Main application settings."""
 
@@ -167,6 +186,7 @@ class Settings(BaseSettings):
     search: SearchSettings = Field(default_factory=SearchSettings)
     email: EmailSettings = Field(default_factory=EmailSettings)
     queue: QueueSettings = Field(default_factory=QueueSettings)
+    features: FeatureSettings = Field(default_factory=FeatureSettings)
 
     @field_validator("environment")
     @classmethod
