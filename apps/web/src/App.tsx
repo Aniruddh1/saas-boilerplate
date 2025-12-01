@@ -13,20 +13,7 @@ import { RegisterPage } from '@/pages/auth/RegisterPage'
 
 // Dashboard Pages
 import { DashboardPage } from '@/pages/dashboard/DashboardPage'
-import { ProjectsPage } from '@/pages/projects/ProjectsPage'
 import { SettingsPage } from '@/pages/settings/SettingsPage'
-
-// Organization Pages
-import {
-  OrganizationsPage,
-  OrgDetailPage,
-  OrgOverviewPage,
-  OrgMembersPage,
-  OrgAPIKeysPage,
-  OrgWebhooksPage,
-  OrgAuditLogPage,
-  OrgSettingsPage,
-} from '@/pages/orgs'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
@@ -74,19 +61,7 @@ function App() {
         >
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/projects" element={<ProjectsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
-
-          {/* Organizations */}
-          <Route path="/orgs" element={<OrganizationsPage />} />
-          <Route path="/orgs/:orgId" element={<OrgDetailPage />}>
-            <Route index element={<OrgOverviewPage />} />
-            <Route path="members" element={<OrgMembersPage />} />
-            <Route path="api-keys" element={<OrgAPIKeysPage />} />
-            <Route path="webhooks" element={<OrgWebhooksPage />} />
-            <Route path="audit-log" element={<OrgAuditLogPage />} />
-            <Route path="settings" element={<OrgSettingsPage />} />
-          </Route>
         </Route>
       </Routes>
       <Toaster />

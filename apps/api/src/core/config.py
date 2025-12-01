@@ -37,10 +37,11 @@ class RedisSettings(BaseSettings):
 
 
 class AuthSettings(BaseSettings):
-    """Authentication configuration."""
+    """Authentication and authorization configuration."""
 
     model_config = SettingsConfigDict(env_prefix="AUTH_")
 
+    # JWT Settings
     secret_key: str = Field(
         default="change-me-in-production",
         description="Secret key for JWT signing",
@@ -49,6 +50,26 @@ class AuthSettings(BaseSettings):
     access_token_expire_minutes: int = Field(default=30, ge=1)
     refresh_token_expire_days: int = Field(default=7, ge=1)
     password_min_length: int = Field(default=8, ge=6)
+
+    # Authorization Settings
+    policy_engine: str = Field(
+        default="simple",
+        description="Policy engine: simple, rbac, casbin",
+    )
+    scope_provider: str = Field(
+        default="none",
+        description="Scope provider: none, ownership, hierarchical",
+    )
+
+    # Multi-tenancy
+    multi_tenant: bool = Field(
+        default=False,
+        description="Enable multi-tenant data isolation",
+    )
+    tenant_field: str = Field(
+        default="organization_id",
+        description="Field name for tenant ID on models",
+    )
 
 
 class StorageSettings(BaseSettings):

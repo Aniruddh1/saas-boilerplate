@@ -30,11 +30,7 @@ class AuditLog(Base, UUIDMixin):
     actor_user_agent: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
 
     # What was affected
-    org_id: Mapped[Optional[UUID]] = mapped_column(
-        ForeignKey("organizations.id", ondelete="SET NULL"),
-        nullable=True
-    )
-    resource_type: Mapped[str] = mapped_column(String(100))  # e.g., "user", "project", "org"
+    resource_type: Mapped[str] = mapped_column(String(100))  # e.g., "user", "account", "transaction"
     resource_id: Mapped[str] = mapped_column(String(255))  # UUID or other ID as string
 
     # What happened
@@ -58,7 +54,6 @@ class AuditLog(Base, UUIDMixin):
 
     # Relationships
     actor: Mapped[Optional["User"]] = relationship()
-    org: Mapped[Optional["Organization"]] = relationship()
 
     def __repr__(self) -> str:
         return f"<AuditLog {self.action} {self.resource_type}:{self.resource_id}>"

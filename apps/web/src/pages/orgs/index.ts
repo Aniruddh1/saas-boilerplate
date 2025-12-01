@@ -1,8 +1,0 @@
-export { OrganizationsPage } from './OrganizationsPage'
-export { OrgDetailPage } from './OrgDetailPage'
-export { OrgOverviewPage } from './OrgOverviewPage'
-export { OrgMembersPage } from './OrgMembersPage'
-export { OrgAPIKeysPage } from './OrgAPIKeysPage'
-export { OrgWebhooksPage } from './OrgWebhooksPage'
-export { OrgAuditLogPage } from './OrgAuditLogPage'
-export { OrgSettingsPage } from './OrgSettingsPage'

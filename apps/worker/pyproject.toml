@@ -1,7 +1,7 @@
 [project]
-name = "saas-worker"
+name = "app-worker"
 version = "0.1.0"
-description = "SaaS Background Worker"
+description = "Background Worker"
 requires-python = ">=3.11"
 dependencies = [
     "celery[redis]>=5.3.0",

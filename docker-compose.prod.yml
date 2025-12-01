@@ -7,7 +7,7 @@ services:
     build:
       context: ./apps/api
       dockerfile: Dockerfile
-    container_name: saas-api
+    container_name: app-api
     restart: unless-stopped
     environment:
       - DB_URL=${DB_URL}
@@ -37,7 +37,7 @@ services:
     build:
       context: ./apps/worker
       dockerfile: Dockerfile
-    container_name: saas-worker
+    container_name: app-worker
     restart: unless-stopped
     environment:
       - BROKER_URL=${QUEUE_BROKER_URL}
@@ -55,7 +55,7 @@ services:
     build:
       context: ./apps/worker
       dockerfile: Dockerfile
-    container_name: saas-beat
+    container_name: app-beat
     restart: unless-stopped
     environment:
       - BROKER_URL=${QUEUE_BROKER_URL}
@@ -72,7 +72,7 @@ services:
     build:
       context: ./apps/web
       dockerfile: Dockerfile.prod
-    container_name: saas-web
+    container_name: app-web
     restart: unless-stopped
     ports:
       - "3000:80"
@@ -84,4 +84,4 @@ services:
 
 networks:
   default:
-    name: saas-network
+    name: app-network

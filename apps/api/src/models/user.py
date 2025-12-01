@@ -4,8 +4,8 @@ User model.
 
 from datetime import datetime
 from uuid import UUID, uuid4
-from sqlalchemy import String, Boolean, DateTime, func
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import String, Boolean, DateTime
+from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 
 from .base import Base, TimestampMixin
@@ -49,22 +49,5 @@ class User(Base, TimestampMixin):
     avatar_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     timezone: Mapped[str] = mapped_column(String(50), default="UTC")
 
-    # Relationships
-    org_memberships: Mapped[list["OrgMember"]] = relationship(
-        "OrgMember",
-        back_populates="user",
-        lazy="selectin",
-    )
-    api_keys: Mapped[list["APIKey"]] = relationship(
-        "APIKey",
-        back_populates="created_by_user",
-        lazy="selectin",
-    )
-
     def __repr__(self) -> str:
         return f"<User {self.email}>"
-
-
-# Import at bottom to avoid circular imports
-from .org import OrgMember
-from .api_key import APIKey

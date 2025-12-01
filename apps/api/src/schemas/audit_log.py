@@ -14,7 +14,6 @@ class AuditLogResponse(BaseModel):
     actor_id: Optional[UUID]
     actor_email: Optional[str]
     actor_ip: Optional[str]
-    org_id: Optional[UUID]
     resource_type: str
     resource_id: str
     action: str
@@ -55,7 +54,5 @@ class AuditAction:
     ROLE_CHANGED = "role_changed"
     PERMISSION_GRANTED = "permission_granted"
     PERMISSION_REVOKED = "permission_revoked"
-    API_KEY_CREATED = "api_key_created"
-    API_KEY_REVOKED = "api_key_revoked"
     EXPORT = "export"
     IMPORT = "import"

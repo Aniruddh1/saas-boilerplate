@@ -2,11 +2,11 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:16-alpine
-    container_name: saas-postgres
+    container_name: app-postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: saas
+      POSTGRES_DB: app
     ports:
       - "5433:5432"
     volumes:
@@ -20,7 +20,7 @@ services:
   # Redis
   redis:
     image: redis:7-alpine
-    container_name: saas-redis
+    container_name: app-redis
     ports:
       - "6380:6379"
     volumes:
@@ -34,7 +34,7 @@ services:
   # Meilisearch
   meilisearch:
     image: getmeili/meilisearch:v1.6
-    container_name: saas-meilisearch
+    container_name: app-meilisearch
     environment:
       MEILI_ENV: development
       MEILI_NO_ANALYTICS: "true"
@@ -46,7 +46,7 @@ services:
   # MailHog (for email testing)
   mailhog:
     image: mailhog/mailhog
-    container_name: saas-mailhog
+    container_name: app-mailhog
     ports:
       - "1025:1025"  # SMTP
       - "8025:8025"  # Web UI
@@ -56,9 +56,9 @@ services:
     build:
       context: ./apps/api
       dockerfile: Dockerfile
-    container_name: saas-api
+    container_name: app-api
     environment:
-      - DB_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/saas
+      - DB_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/app
       - REDIS_URL=redis://redis:6379/0
       - SEARCH_MEILISEARCH_URL=http://meilisearch:7700
       - EMAIL_SMTP_HOST=mailhog
@@ -81,11 +81,11 @@ services:
     build:
       context: ./apps/worker
       dockerfile: Dockerfile
-    container_name: saas-worker
+    container_name: app-worker
     environment:
       - BROKER_URL=redis://redis:6379/1
       - RESULT_BACKEND=redis://redis:6379/2
-      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/saas
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/app
       - SMTP_HOST=mailhog
       - SMTP_PORT=1025
     depends_on:
@@ -102,7 +102,7 @@ services:
     build:
       context: ./apps/worker
       dockerfile: Dockerfile
-    container_name: saas-beat
+    container_name: app-beat
     environment:
       - BROKER_URL=redis://redis:6379/1
       - RESULT_BACKEND=redis://redis:6379/2
@@ -115,7 +115,7 @@ services:
   # Flower (Celery monitoring)
   flower:
     image: mher/flower
-    container_name: saas-flower
+    container_name: app-flower
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/1
       - FLOWER_PORT=5555
@@ -128,7 +128,7 @@ services:
   # Frontend (React - dev mode)
   web:
     image: node:20-alpine
-    container_name: saas-web
+    container_name: app-web
     working_dir: /app
     environment:
       - NODE_ENV=development
@@ -148,4 +148,4 @@ volumes:
 
 networks:
   default:
-    name: saas-network
+    name: app-network

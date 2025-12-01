@@ -1,22 +1,18 @@
 import { Outlet, Link, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/stores/auth'
-import { useOrgStore } from '@/stores/org'
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
-import { LayoutDashboard, FolderKanban, Settings, LogOut, Building2, ChevronRight } from 'lucide-react'
+import { LayoutDashboard, Settings, LogOut } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Organizations', href: '/orgs', icon: Building2 },
-  { name: 'Projects', href: '/projects', icon: FolderKanban },
   { name: 'Settings', href: '/settings', icon: Settings },
 ]
 
 export function DashboardLayout() {
   const location = useLocation()
   const { user, logout } = useAuthStore()
-  const { currentOrg } = useOrgStore()
 
   return (
     <div className="min-h-screen flex">
@@ -24,24 +20,8 @@ export function DashboardLayout() {
       <div className="w-64 border-r bg-card flex flex-col">
         {/* Logo */}
         <div className="h-16 flex items-center px-6 border-b">
-          <span className="text-xl font-bold">SaaS App</span>
+          <span className="text-xl font-bold">App</span>
         </div>
-
-        {/* Current Org */}
-        {currentOrg && (
-          <Link
-            to={`/orgs/${currentOrg.id}`}
-            className="mx-4 mt-4 p-3 rounded-lg border bg-muted/50 hover:bg-muted transition-colors"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 min-w-0">
-                <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                <span className="font-medium truncate">{currentOrg.name}</span>
-              </div>
-              <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            </div>
-          </Link>
-        )}
 
         {/* Navigation */}
         <nav className="flex-1 p-4 space-y-1">

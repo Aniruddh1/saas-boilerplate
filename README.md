@@ -1,6 +1,8 @@
-# SaaS Boilerplate
+# Minimal App Boilerplate
 
-A production-ready SaaS boilerplate with FastAPI backend, React frontend, and Celery workers.
+A minimal, production-ready boilerplate with FastAPI backend, React frontend, and Celery workers.
+
+This is a **minimal** version with just users, authentication, and audit logging. Perfect as a starting point for any application - add your domain-specific models and features on top.
 
 ## Tech Stack
 
@@ -43,8 +45,8 @@ A production-ready SaaS boilerplate with FastAPI backend, React frontend, and Ce
 ### 1. Clone and Setup
 
 ```bash
-git clone <repo-url> saas-boilerplate
-cd saas-boilerplate
+git clone <repo-url> my-app
+cd my-app
 cp .env.example .env
 ```
 
@@ -147,32 +149,16 @@ make deploy           # Deploy (configure first)
 - Password reset flow (requires email config)
 - Session management
 
-### Organizations
-- Multi-tenant organization support
-- Role-based access (owner, admin, member, viewer)
-- Organization settings and billing
-- Member management and invitations
-
-### Projects
-- Projects belong to organizations
-- CRUD operations
-- Project settings
-
-### API Keys
-- Generate API keys for programmatic access
-- Scoped permissions
-- Key rotation and revocation
-
-### Webhooks
-- Configurable webhook endpoints
-- Event subscriptions
-- Delivery tracking and retries
-- HMAC signature verification
-
 ### Audit Logging
 - Track user actions
 - Filterable audit trail
-- Retention policies
+- Extensible for any resource type
+
+### Extensible Architecture
+- Clean service layer for business logic
+- Repository pattern ready
+- Plugin/hook system for extensibility
+- Easy to add new models, routes, and services
 
 ## Configuration
 
@@ -182,7 +168,7 @@ Copy `.env.example` to `.env` and configure:
 
 ```bash
 # Database
-DB_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/saas
+DB_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/app
 
 # Redis
 REDIS_URL=redis://redis:6379/0

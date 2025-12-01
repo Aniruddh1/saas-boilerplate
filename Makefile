@@ -126,7 +126,7 @@ shell-web: ## Open shell in frontend container
 	docker compose exec web sh
 
 shell-db: ## Open PostgreSQL shell
-	docker compose exec postgres psql -U postgres -d saas
+	docker compose exec postgres psql -U postgres -d app
 
 shell-redis: ## Open Redis CLI
 	docker compose exec redis redis-cli
@@ -148,7 +148,7 @@ health: ## Check health of all services
 
 ## Help
 help: ## Show this help message
-	@echo "$(CYAN)SaaS Boilerplate - Available Commands$(RESET)"
+	@echo "$(CYAN)App Boilerplate - Available Commands$(RESET)"
 	@echo ""
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(GREEN)%-15s$(RESET) %s\n", $$1, $$2}'
 	@echo ""

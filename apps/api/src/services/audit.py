@@ -1,6 +1,5 @@
 """Audit log service for tracking changes."""
 
-from datetime import datetime, timezone
 from typing import Any, Optional
 from uuid import UUID
 
@@ -51,7 +50,6 @@ class AuditLogService:
         actor_email: Optional[str] = None,
         actor_ip: Optional[str] = None,
         actor_user_agent: Optional[str] = None,
-        org_id: Optional[UUID] = None,
         changes: Optional[dict] = None,
         extra_data: Optional[dict] = None,
         summary: Optional[str] = None,
@@ -62,14 +60,13 @@ class AuditLogService:
 
         Args:
             action: The action performed (use AuditAction constants)
-            resource_type: Type of resource affected (e.g., "user", "project")
+            resource_type: Type of resource affected (e.g., "user", "account")
             resource_id: ID of the affected resource
             actor: User who performed the action
             actor_id: ID of the actor (if actor not provided)
             actor_email: Email of the actor (denormalized)
             actor_ip: IP address of the actor
             actor_user_agent: User agent of the actor
-            org_id: Organization context
             changes: Dict of field changes {"field": {"old": x, "new": y}}
             extra_data: Additional context
             summary: Human-readable summary
@@ -85,7 +82,6 @@ class AuditLogService:
             actor_email=actor_email,
             actor_ip=actor_ip,
             actor_user_agent=actor_user_agent,
-            org_id=org_id,
             resource_type=resource_type,
             resource_id=str(resource_id),
             action=action,
@@ -126,11 +122,6 @@ class AuditLogService:
             AuditAction.LOGIN_FAILED: "failed to log in",
             AuditAction.PASSWORD_CHANGED: "changed password for",
             AuditAction.PASSWORD_RESET: "reset password for",
-            AuditAction.INVITE_SENT: "sent invite for",
-            AuditAction.INVITE_ACCEPTED: "accepted invite for",
-            AuditAction.ROLE_CHANGED: "changed role for",
-            AuditAction.API_KEY_CREATED: "created API key for",
-            AuditAction.API_KEY_REVOKED: "revoked API key for",
         }.get(action, action)
 
         if action in [AuditAction.LOGIN, AuditAction.LOGOUT, AuditAction.LOGIN_FAILED]:
@@ -145,16 +136,12 @@ class AuditLogService:
     async def list(
         self,
         *,
-        org_id: Optional[UUID] = None,
         filters: Optional[AuditLogFilter] = None,
         limit: int = 50,
         offset: int = 0,
     ) -> list[AuditLog]:
         """List audit logs with optional filtering."""
         query = select(AuditLog)
-
-        if org_id:
-            query = query.where(AuditLog.org_id == org_id)
 
         if filters:
             if filters.actor_id:
@@ -182,7 +169,6 @@ class AuditLogService:
         resource_id: str,
         resource_data: dict,
         actor: Optional[User] = None,
-        org_id: Optional[UUID] = None,
         request_id: Optional[str] = None,
         actor_ip: Optional[str] = None,
     ) -> AuditLog:
@@ -192,7 +178,6 @@ class AuditLogService:
             resource_type=resource_type,
             resource_id=resource_id,
             actor=actor,
-            org_id=org_id,
             changes={"created": resource_data},
             request_id=request_id,
             actor_ip=actor_ip,
@@ -206,7 +191,6 @@ class AuditLogService:
         old_data: dict,
         new_data: dict,
         actor: Optional[User] = None,
-        org_id: Optional[UUID] = None,
         request_id: Optional[str] = None,
         actor_ip: Optional[str] = None,
     ) -> Optional[AuditLog]:
@@ -221,7 +205,6 @@ class AuditLogService:
             resource_type=resource_type,
             resource_id=resource_id,
             actor=actor,
-            org_id=org_id,
             changes=changes,
             request_id=request_id,
             actor_ip=actor_ip,
@@ -234,7 +217,6 @@ class AuditLogService:
         resource_id: str,
         resource_data: Optional[dict] = None,
         actor: Optional[User] = None,
-        org_id: Optional[UUID] = None,
         request_id: Optional[str] = None,
         actor_ip: Optional[str] = None,
     ) -> AuditLog:
@@ -244,7 +226,6 @@ class AuditLogService:
             resource_type=resource_type,
             resource_id=resource_id,
             actor=actor,
-            org_id=org_id,
             changes={"deleted": resource_data} if resource_data else None,
             request_id=request_id,
             actor_ip=actor_ip,

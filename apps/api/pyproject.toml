@@ -1,7 +1,7 @@
 [project]
-name = "saas-backend"
+name = "app-backend"
 version = "0.1.0"
-description = "SaaS Backend API"
+description = "Backend API"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.109.0",

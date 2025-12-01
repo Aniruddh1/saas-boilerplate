@@ -12,7 +12,7 @@ from src.models.user import User
 from src.schemas.audit_log import AuditLogFilter, AuditLogResponse
 from src.services.audit import AuditLogService
 
-router = APIRouter(prefix="/orgs/{org_id}/audit-logs", tags=["audit-logs"])
+router = APIRouter()
 
 
 async def get_audit_service(
@@ -23,7 +23,6 @@ async def get_audit_service(
 
 @router.get("", response_model=list[AuditLogResponse])
 async def list_audit_logs(
-    org_id: UUID,
     current_user: Annotated[User, Depends(get_current_user)],
     service: Annotated[AuditLogService, Depends(get_audit_service)],
     actor_id: Optional[UUID] = Query(None),
@@ -34,19 +33,19 @@ async def list_audit_logs(
     offset: int = Query(0, ge=0),
 ):
     """
-    List audit logs for an organization.
+    List audit logs.
 
     Supports filtering by actor, resource type, resource ID, and action.
+    Users see only their own actions by default.
     """
     filters = AuditLogFilter(
-        actor_id=actor_id,
+        actor_id=actor_id or current_user.id,
         resource_type=resource_type,
         resource_id=resource_id,
         action=action,
     )
 
     logs = await service.list(
-        org_id=org_id,
         filters=filters,
         limit=limit,
         offset=offset,
@@ -56,17 +55,23 @@ async def list_audit_logs(
 
 @router.get("/{log_id}", response_model=AuditLogResponse)
 async def get_audit_log(
-    org_id: UUID,
     log_id: UUID,
     current_user: Annotated[User, Depends(get_current_user)],
     service: Annotated[AuditLogService, Depends(get_audit_service)],
 ):
     """Get a specific audit log entry."""
     log = await service.get(log_id)
-    if not log or log.org_id != org_id:
+    if not log:
         from fastapi import HTTPException, status
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Audit log not found",
+        )
+    # Users can only see their own logs
+    if log.actor_id != current_user.id:
+        from fastapi import HTTPException, status
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied",
         )
     return log
