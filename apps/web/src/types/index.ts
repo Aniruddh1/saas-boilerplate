@@ -144,6 +144,130 @@ export interface CursorParams {
 // Legacy alias for backward compatibility
 export type PaginatedResponse<T> = OffsetPage<T>
 
+// ============ Job/Queue Types ============
+
+/**
+ * Job status values.
+ */
+export type JobStatusValue = 'pending' | 'started' | 'success' | 'failure' | 'retry' | 'revoked'
+
+/**
+ * Job priority levels.
+ */
+export type JobPriority = 'low' | 'normal' | 'high' | 'critical'
+
+/**
+ * Job status response.
+ * Best for: Tracking async task status, polling for completion.
+ */
+export interface Job {
+  id: string
+  task: string
+  status: JobStatusValue
+  created_at?: string
+  started_at?: string
+  completed_at?: string
+  result?: unknown
+  error?: string
+  retries: number
+}
+
+/**
+ * Scheduled job (recurring task).
+ * Best for: Cron jobs, periodic tasks, admin management.
+ */
+export interface ScheduledJob {
+  id: string
+  task: string
+  schedule: string
+  name?: string
+  enabled: boolean
+  last_run?: string
+  next_run?: string
+}
+
+/**
+ * Batch job result.
+ */
+export interface JobBatchResult {
+  total: number
+  enqueued: number
+  task_ids: string[]
+}
+
+/**
+ * Create scheduled job request.
+ */
+export interface CreateScheduledJobData {
+  task: string
+  schedule: string
+  name?: string
+  args?: unknown[]
+  kwargs?: Record<string, unknown>
+}
+
+// ============ Notification Types ============
+
+/**
+ * Notification type/severity.
+ */
+export type NotificationType = 'info' | 'success' | 'warning' | 'error'
+
+/**
+ * Notification category for filtering and preferences.
+ */
+export type NotificationCategory = 'system' | 'account' | 'billing' | 'feature' | 'social' | 'marketing'
+
+/**
+ * In-app notification.
+ * Best for: Notification list, notification bell, inbox.
+ */
+export interface Notification {
+  id: string
+  type: NotificationType
+  category: NotificationCategory | string
+  title: string
+  message: string
+  action_url?: string
+  action_label?: string
+  data?: Record<string, unknown>
+  read_at?: string
+  created_at: string
+}
+
+/**
+ * Create notification request (admin).
+ */
+export interface CreateNotificationData {
+  type?: NotificationType
+  category?: string
+  title: string
+  message: string
+  action_url?: string
+  action_label?: string
+  data?: Record<string, unknown>
+}
+
+/**
+ * Broadcast notification request (admin).
+ */
+export interface BroadcastNotificationData {
+  user_ids: string[]
+  notification: CreateNotificationData
+  channels?: string[]
+}
+
+/**
+ * Notification preferences per category.
+ */
+export interface NotificationPreferences {
+  categories: Record<string, {
+    in_app: boolean
+    email: boolean
+    webhook?: boolean
+  }>
+}
+
 // ============ Common Types ============
 
 export interface ApiError {

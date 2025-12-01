@@ -7,6 +7,7 @@ Import this module in app startup to register all implementations.
 from src.core.plugins.registry import (
     storage_backends,
     cache_backends,
+    queue_backends,
 )
 from src.core.config import settings
 
@@ -53,3 +54,22 @@ def register_backends() -> None:
     #         ...
     #     )
     # storage_backends.register("s3", create_s3_storage)
+
+    # ============ Queue Backends ============
+
+    def create_celery_queue(**config):
+        from src.implementations.queue.celery import CeleryQueueBackend
+        return CeleryQueueBackend(
+            broker_url=config.get("broker_url", str(settings.redis.url)),
+            result_backend=config.get("result_backend", str(settings.redis.url)),
+        )
+
+    def create_memory_queue(**config):
+        from src.implementations.queue.memory import MemoryQueueBackend
+        return MemoryQueueBackend(
+            execute_immediately=config.get("execute_immediately", True),
+            store_results=config.get("store_results", True),
+        )
+
+    queue_backends.register("celery", create_celery_queue, default=True)
+    queue_backends.register("memory", create_memory_queue)

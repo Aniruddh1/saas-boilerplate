@@ -9,6 +9,17 @@ from .queue import QueueBackend
 from .search import SearchBackend
 from .email import EmailBackend
 from .events import EventBus
+from .notifications import (
+    NotificationChannel,
+    NotificationStore,
+    NotificationPreferencesStore,
+    Notification,
+    NotificationResult,
+    BulkNotificationResult,
+    NotificationType,
+    NotificationCategory,
+    UserNotificationPreferences,
+)
 
 __all__ = [
     "StorageBackend",
@@ -17,4 +28,14 @@ __all__ = [
     "SearchBackend",
     "EmailBackend",
     "EventBus",
+    # Notifications
+    "NotificationChannel",
+    "NotificationStore",
+    "NotificationPreferencesStore",
+    "Notification",
+    "NotificationResult",
+    "BulkNotificationResult",
+    "NotificationType",
+    "NotificationCategory",
+    "UserNotificationPreferences",
 ]
