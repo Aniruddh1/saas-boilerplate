@@ -211,16 +211,24 @@ src/implementations/storage/
 src/utils/storage.py                    # Utilities and dependencies
 ```
 
-## Installing Libcloud
+## Installation
 
-```bash
-pip install apache-libcloud
+Already included in project dependencies:
+
+```toml
+# pyproject.toml
+dependencies = [
+    # ... other deps
+    "apache-libcloud>=3.8.0",  # Multi-cloud storage
+    "aioboto3>=12.0.0",        # Direct S3 (optional, for S3StorageBackend)
+]
 ```
 
-Or add to pyproject.toml:
-```toml
-[project.dependencies]
-apache-libcloud = "^3.8"
+Install with:
+```bash
+pip install -e .
+# or
+uv sync
 ```
 
 ## MinIO Setup (Docker)

@@ -35,6 +35,7 @@ import asyncio
 import functools
 import hashlib
 import json
+import time
 from datetime import timedelta
 from enum import Enum
 from typing import (
@@ -412,7 +413,6 @@ def memoize(
                     raise
 
                 # Fallback to in-memory cache
-                import time
                 now = time.time()
 
                 async with _memory_cache_lock:

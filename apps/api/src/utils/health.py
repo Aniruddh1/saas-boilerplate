@@ -6,6 +6,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional
 
+import httpx
+import redis.asyncio as aioredis
 import structlog
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -84,10 +86,8 @@ async def check_database(db: AsyncSession) -> ComponentHealth:
 async def check_redis(redis_url: str) -> ComponentHealth:
     """Check Redis connectivity and latency."""
     try:
-        import redis.asyncio as redis
-
         start = time.time()
-        client = redis.from_url(redis_url)
+        client = aioredis.from_url(redis_url)
         await client.ping()
         latency = (time.time() - start) * 1000
         await client.close()
@@ -97,12 +97,6 @@ async def check_redis(redis_url: str) -> ComponentHealth:
             status=HealthStatus.HEALTHY if latency < 50 else HealthStatus.DEGRADED,
             latency_ms=round(latency, 2),
             message="Connected" if latency < 50 else "Slow response",
-        )
-    except ImportError:
-        return ComponentHealth(
-            name="redis",
-            status=HealthStatus.HEALTHY,
-            message="Not configured",
         )
     except Exception as e:
         logger.error("Redis health check failed", error=str(e))
@@ -120,8 +114,6 @@ async def check_external_service(
 ) -> ComponentHealth:
     """Check external HTTP service health."""
     try:
-        import httpx
-
         start = time.time()
         async with httpx.AsyncClient() as client:
             response = await client.get(url, timeout=timeout)

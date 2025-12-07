@@ -19,6 +19,11 @@ dependencies = [
     "python-multipart>=0.0.6",
     "httpx>=0.26.0",
     "structlog>=24.1.0",
+    # Background jobs
+    "celery[redis]>=5.3.0",  # Distributed task queue
+    # Storage backends
+    "apache-libcloud>=3.8.0",  # Multi-cloud storage (S3, GCS, Azure, etc.)
+    "aioboto3>=12.0.0",  # Async AWS S3 (direct S3 support)
 ]
 
 [project.optional-dependencies]

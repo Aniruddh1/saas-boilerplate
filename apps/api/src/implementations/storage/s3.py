@@ -16,6 +16,8 @@ from typing import BinaryIO, AsyncIterator, Optional
 from datetime import datetime, timedelta
 from io import BytesIO
 
+import aioboto3
+
 from src.core.interfaces.storage import StorageFile, PresignedURL
 
 
@@ -83,15 +85,6 @@ class S3StorageBackend:
         self.region = region
         self.endpoint_url = endpoint_url
         self.public_url = public_url
-
-        # Import here to avoid requiring boto3 if not using S3
-        try:
-            import aioboto3
-        except ImportError:
-            raise ImportError(
-                "aioboto3 is required for S3 storage. "
-                "Install with: pip install aioboto3"
-            )
 
         # Create session
         self._session = aioboto3.Session(

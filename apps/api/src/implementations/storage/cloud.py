@@ -8,8 +8,6 @@ Supports 30+ cloud providers with a unified interface:
 - DigitalOcean Spaces
 - MinIO (S3-compatible)
 - Rackspace, Linode, and many more
-
-Install: pip install apache-libcloud
 """
 
 from __future__ import annotations
@@ -19,7 +17,10 @@ import hashlib
 from io import BytesIO
 from typing import AsyncIterator, Optional
 from datetime import datetime, timedelta
-from functools import partial
+
+from libcloud.storage.base import Object
+from libcloud.storage.types import Provider
+from libcloud.storage.providers import get_driver
 
 from src.core.interfaces.storage import StorageFile, PresignedURL
 
@@ -123,15 +124,6 @@ class CloudStorageBackend:
             port: Custom port (for MinIO)
             secure: Use HTTPS (default: True)
         """
-        try:
-            from libcloud.storage.types import Provider
-            from libcloud.storage.providers import get_driver
-        except ImportError:
-            raise ImportError(
-                "apache-libcloud is required for cloud storage. "
-                "Install with: pip install apache-libcloud"
-            )
-
         # Resolve provider name
         provider_key = provider.lower()
         if provider_key not in self.PROVIDERS:
@@ -343,7 +335,6 @@ class CloudStorageBackend:
         except Exception:
             # Object doesn't exist yet (for upload URLs)
             # Create a temporary reference
-            from libcloud.storage.base import Object
             obj = Object(
                 name=key,
                 size=0,
