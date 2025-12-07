@@ -75,11 +75,23 @@ async def get_storage() -> StorageBackend:
     FastAPI dependency to get the configured storage backend.
 
     Configuration via environment:
-        STORAGE_BACKEND=local|s3
+        STORAGE_BACKEND=local|s3|gcs|azure|digitalocean|...
         STORAGE_LOCAL_PATH=./uploads
-        STORAGE_S3_BUCKET=my-bucket
-        STORAGE_S3_REGION=us-east-1
-        STORAGE_S3_ENDPOINT=http://localhost:9000  (for MinIO)
+        STORAGE_CONTAINER=my-bucket
+        STORAGE_KEY=access-key
+        STORAGE_SECRET=secret-key
+        STORAGE_REGION=us-east-1
+        STORAGE_ENDPOINT=http://localhost:9000  (for MinIO)
+
+    Supported backends (via Apache Libcloud):
+        - local: Local filesystem
+        - s3: AWS S3 or S3-compatible (MinIO)
+        - gcs: Google Cloud Storage
+        - azure: Azure Blob Storage
+        - digitalocean: DigitalOcean Spaces
+        - backblaze: Backblaze B2
+        - linode: Linode Object Storage
+        - And 20+ more providers
 
     Usage:
         @router.post("/upload")
@@ -90,24 +102,62 @@ async def get_storage() -> StorageBackend:
             ...
     """
     storage_config = settings.storage
+    backend = storage_config.backend.lower()
 
-    if storage_config.backend == "s3":
-        from src.implementations.storage.s3 import S3StorageBackend
-
-        return S3StorageBackend(
-            bucket=storage_config.s3_bucket,
-            region=storage_config.s3_region,
-            access_key=storage_config.s3_access_key or None,
-            secret_key=storage_config.s3_secret_key or None,
-            endpoint_url=storage_config.s3_endpoint,
-        )
-    else:
+    if backend == "local":
         from src.implementations.storage.local import LocalStorageBackend
 
         return LocalStorageBackend(
             base_path=storage_config.local_path,
             base_url="/files",
         )
+
+    # All cloud providers use Libcloud
+    from src.implementations.storage.cloud import CloudStorageBackend
+
+    # Map common names to Libcloud provider names
+    provider_map = {
+        "s3": "s3",
+        "aws": "s3",
+        "minio": "s3",
+        "gcs": "google_storage",
+        "google": "google_storage",
+        "azure": "azure_blobs",
+        "digitalocean": "digitalocean_spaces",
+        "spaces": "digitalocean_spaces",
+        "backblaze": "backblaze_b2",
+        "b2": "backblaze_b2",
+        "linode": "linode_object_storage",
+    }
+
+    provider = provider_map.get(backend, backend)
+
+    # Build kwargs
+    kwargs = {
+        "provider": provider,
+        "container": storage_config.container,
+        "key": storage_config.key,
+        "secret": storage_config.secret,
+    }
+
+    if storage_config.region:
+        kwargs["region"] = storage_config.region
+
+    if storage_config.project:
+        kwargs["project"] = storage_config.project
+
+    # For MinIO / custom endpoints
+    if storage_config.endpoint:
+        # Parse endpoint URL
+        from urllib.parse import urlparse
+        parsed = urlparse(storage_config.endpoint)
+        kwargs["host"] = parsed.hostname
+        if parsed.port:
+            kwargs["port"] = parsed.port
+        if parsed.scheme == "http":
+            kwargs["secure"] = False
+
+    return CloudStorageBackend(**kwargs)
 
 
 # ============================================================

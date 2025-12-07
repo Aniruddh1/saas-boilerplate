@@ -73,19 +73,44 @@ class AuthSettings(BaseSettings):
 
 
 class StorageSettings(BaseSettings):
-    """Storage backend configuration."""
+    """
+    Storage backend configuration.
+
+    Supports 30+ cloud providers via Apache Libcloud:
+    - local: Local filesystem
+    - s3/aws/minio: AWS S3 or S3-compatible
+    - gcs/google: Google Cloud Storage
+    - azure: Azure Blob Storage
+    - digitalocean/spaces: DigitalOcean Spaces
+    - backblaze/b2: Backblaze B2
+    - linode: Linode Object Storage
+    """
 
     model_config = SettingsConfigDict(env_prefix="STORAGE_")
 
-    backend: str = Field(default="local", description="local, s3, gcs")
+    # Provider selection
+    backend: str = Field(
+        default="local",
+        description="local, s3, gcs, azure, digitalocean, backblaze, linode, etc.",
+    )
+
+    # Local storage
     local_path: str = Field(default="./uploads")
 
-    # S3 settings
+    # Cloud storage (universal)
+    container: str = Field(default="", description="Bucket/container name")
+    key: str = Field(default="", description="Access key / account name")
+    secret: str = Field(default="", description="Secret key / account key")
+    region: str = Field(default="", description="Region (s3, digitalocean, etc.)")
+    project: str = Field(default="", description="Project ID (gcs)")
+    endpoint: str | None = Field(default=None, description="Custom endpoint (MinIO)")
+
+    # Legacy S3 settings (for backwards compatibility)
     s3_bucket: str = Field(default="")
     s3_region: str = Field(default="us-east-1")
     s3_access_key: str = Field(default="")
     s3_secret_key: str = Field(default="")
-    s3_endpoint: str | None = Field(default=None, description="For MinIO")
+    s3_endpoint: str | None = Field(default=None)
 
 
 class SearchSettings(BaseSettings):
